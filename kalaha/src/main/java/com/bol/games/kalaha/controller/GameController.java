@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -41,11 +42,17 @@ public class GameController {
 	@MessageMapping("/all")
     @SendTo("/queue/chat/{gameId}")
     public void post(@Payload Map<String, String> message) {
-        //message.put("timestamp", Long.toString(System.currentTimeMillis()));
-        //log.info("{}",message);
 		String gameId = message.get("gameId");      
-        simpMessagingTemplate.convertAndSend("/queue/chat/" + gameId, gameService.gamePlay(gameId, message));
-
+        simpMessagingTemplate.convertAndSend("/queue/chat/" + gameId, gameService.chat(gameId, message));
+    }
+	
+	@MessageMapping("/play")
+    @SendTo("/queue/game/{gameId}")
+    public void gamePlay(@Payload Map<String, String> message) throws MessagingException, InvalidGameIdException {
+		String gameId = message.get("gameId"); 
+		String userId = message.get("userId"); 
+		String move = message.get("move"); 		
+        simpMessagingTemplate.convertAndSend("/queue/game/" + gameId, gameService.gamePlay(gameId, userId, move));
     }
 	
 	@GetMapping("/register")

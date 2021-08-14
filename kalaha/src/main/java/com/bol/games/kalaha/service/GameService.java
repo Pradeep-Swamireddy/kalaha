@@ -43,10 +43,19 @@ public class GameService {
 		throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
 	}
 	
-	public List<String> gamePlay( String gameId, Map<String, String> message) {
+	public List<String> chat( String gameId, Map<String, String> message) {
 		Game existingGame = gamesMap.get(gameId);
 		existingGame.addMessage(message.get("userId")+"- "+message.get("message"));
 		return existingGame.getMessages();
+	}
+	
+	public Game gamePlay( String gameId, String userId, String move) throws InvalidGameIdException {
+		Game existingGame = gamesMap.get(gameId);	
+		if(existingGame==null) {
+			throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
+		}
+		existingGame.validateAndMove(Integer.parseInt(move), userId);		
+		return existingGame;
 	}
 
 }

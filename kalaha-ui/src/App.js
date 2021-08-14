@@ -1,10 +1,13 @@
 import './App.css';
+import Game from './component/Game'
+import Header from './component/Header'
 import Chat from './component/Chat'
 
 function App() {
   return (
     <div className="App">
-        <Chat />      
+        <Header />
+        <Game />      
     </div>
   );
 }

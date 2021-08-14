@@ -7,23 +7,26 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-class Chat extends React.Component {
+class Game extends React.Component {
   state={
       currentMessage: "",
+      move: -1,
       msg: [],      
       userId: null,
       topics: null,
       gameId: "",
-      game: {},
+      game: "",
       opponentId: null,
       gameComplete: false,
       winner: null,
       clientConnected: false
   }
 
-  updateCurrentMessage = event => {
-    let newCurrentMsg = event.target.value;
-    this.setState({currentMessage: newCurrentMsg})
+  updateState = (event, id) => {
+    let newValue = event.target.value;
+    let newState = {...this.state}
+    newState[id] = newValue
+    this.setState(newState)
   }
 
   sendMessage = () => {   
@@ -31,10 +34,15 @@ class Chat extends React.Component {
       this.clientRef.sendMessage('/app/all', JSON.stringify({userId: this.state.userId, message: this.state.currentMessage, gameId: this.state.gameId}))    
   }
 
-  setMessage = (data) => {
-    console.log("msg:"+data);
+  sendMove = () => {   
+    console.log(this.state.move);   
+    this.clientRef.sendMessage('/app/play', JSON.stringify({userId: this.state.userId, move: this.state.move, gameId: this.state.gameId}))    
+  }
+
+  setGameState = (data) => {
+    console.log("game:"+data);
     let newState = {...this.state}
-    newState["msg"] = data.toString().split(',')
+    newState["game"] = JSON.stringify(data)
     this.setState(newState)
     console.log(this.state)
   }
@@ -53,7 +61,7 @@ class Chat extends React.Component {
     if(this.state.gameId===""||this.state.gameComplete===true){
       axios.get('http://localhost:8080/game/new/'+this.state.userId)
       .then(res => {
-        this.setState({ gameId:  res.data, topics: '/queue/chat/'+res.data});
+        this.setState({ gameId:  res.data, topics: '/queue/game/'+res.data});
         console.log(this.state);
       })
     }
@@ -66,7 +74,7 @@ class Chat extends React.Component {
     const gameId = event.target.value;
     axios.get('http://localhost:8080/game/join/existing/'+this.state.userId+'/'+gameId)
       .then(res => {
-        this.setState({ gameId:  gameId, topics: '/queue/chat/'+gameId});
+        this.setState({ gameId:  gameId, topics: '/queue/game/'+gameId});
         console.log(this.state);
       })
   }
@@ -79,9 +87,10 @@ class Chat extends React.Component {
                 </ul>                
                 
     return (
-      <div>
+      <div>      
+
         <SockJsClient url='http://localhost:8080/gameplay' topics={[this.state.topics]}
-            onMessage={(data) => { console.log(data); this.setMessage(data)}}
+            onMessage={(data) => { console.log(data); this.setGameState(data)}}
             ref={ (client) => { this.clientRef = client }}
             onConnect={ () => { this.setState({ clientConnected: true }) } }
             onDisconnect={ () => { this.setState({ clientConnected: false }) } }
@@ -89,13 +98,13 @@ class Chat extends React.Component {
         
         <h5>Game Id(Share this with your opponent): {this.state.gameId}</h5>
         <h5>Your UserID: {this.state.userId}</h5>
-        <p>Chat: {chat}</p>
-        <textarea value={this.state.currentMessage} onChange={event=>this.updateCurrentMessage(event)}/>     
+        <p>Game Board: {this.state.game}</p>
+        <textarea id="move" value={this.state.move} onChange={event=>this.updateState(event, "move")}/>     
 
         <Container fluid="md">
         <Row className="justify-content-md-center pb-3 pt-3">
             <Col xs lg="2">
-             <Button variant="primary" onClick={this.sendMessage}>Send Message</Button>
+             <Button variant="primary" onClick={this.sendMove}>Send Move</Button>
             </Col>
           </Row>
           <Row className="justify-content-md-center pb-3 pt-3">
@@ -114,4 +123,4 @@ class Chat extends React.Component {
   }
 }
 
-export default Chat;
+export default Game;
