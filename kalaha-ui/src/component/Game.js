@@ -16,6 +16,9 @@ class Game extends React.Component {
       topics: null,
       gameId: "",
       game: "",
+      board: {"gameId":"ac2701e4-f8d1-4c2c-9cfd-b9975fefb4ec","hostPlayer":"Guest_1628968471632","opponentPlayer":"Guest_1628968472881","status":"IN_PROGRESS","kalahaGameBoard":[1,5,5,5,0,5,5,1,5,4,4,4,4,0],"winner":null,"hostKalahaIndex":7,"opponentKalahaIndex":0,"sideLength":6,"messages":[],"turn":"Guest_1628968471632"},
+      kalahaGameBoardUpper: [],
+      kalahaGameBoardLower: [],
       opponentId: null,
       gameComplete: false,
       winner: null,
@@ -43,6 +46,8 @@ class Game extends React.Component {
     console.log("game:"+data);
     let newState = {...this.state}
     newState["game"] = JSON.stringify(data)
+    newState["kalahaGameBoardLower"] = data["kalahaGameBoard"].slice(0,7);
+    newState["kalahaGameBoardUpper"] = data["kalahaGameBoard"].slice(7,14).reverse();
     this.setState(newState)
     console.log(this.state)
   }
@@ -99,6 +104,8 @@ class Game extends React.Component {
         <h5>Game Id(Share this with your opponent): {this.state.gameId}</h5>
         <h5>Your UserID: {this.state.userId}</h5>
         <p>Game Board: {this.state.game}</p>
+        <h5>{this.state.kalahaGameBoardUpper}</h5>
+        <h5>{this.state.kalahaGameBoardLower}</h5>
         <textarea id="move" value={this.state.move} onChange={event=>this.updateState(event, "move")}/>     
 
         <Container fluid="md">

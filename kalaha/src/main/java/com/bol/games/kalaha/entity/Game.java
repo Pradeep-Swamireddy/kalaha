@@ -19,7 +19,7 @@ public class Game {
 	private String opponentPlayer;
 	private GameStatus status;
 	private final int[] kalahaGameBoard;
-	private static final int COINS_PER_HOLE = 4;
+	private static final int SEEDS_PER_CUP = 4;
 	private String winner;
 	private int hostKalahaIndex;
 	private int opponentKalahaIndex;
@@ -43,7 +43,7 @@ public class Game {
 		int size = kalahaGameBoard.length;
 		for (int i = 0; i < size; i++) {
 			if (i != hostKalahaIndex && i != opponentKalahaIndex)
-				kalahaGameBoard[i] = COINS_PER_HOLE;
+				kalahaGameBoard[i] = SEEDS_PER_CUP;
 		}
 	}
 
@@ -58,33 +58,37 @@ public class Game {
 	}
 
 	public void validateAndMove(int move, String moveBy) {
-		if (status != GameStatus.COMPLETE && turn.equalsIgnoreCase(moveBy) && move < kalahaGameBoard.length && move > 0
+		if (status != GameStatus.COMPLETE && turn.equals(moveBy) && move < kalahaGameBoard.length && move > 0
 				&& kalahaGameBoard[move] > 0) {
-			if (moveBy.equalsIgnoreCase(hostPlayer)
+			if (moveBy.equals(hostPlayer)
 					&& (move < hostKalahaIndex && move >= hostKalahaIndex - sideLength)) {
-				performMove(move, moveBy, hostKalahaIndex);
-			} else if (moveBy.equalsIgnoreCase(opponentPlayer)
+				performMove(move, moveBy, hostKalahaIndex, opponentKalahaIndex);
+			} else if (moveBy.equals(opponentPlayer)
 					&& (move > hostKalahaIndex && move <= hostKalahaIndex + sideLength)) {
-				performMove(move, moveBy, opponentKalahaIndex);
-			}else {
+				performMove(move, moveBy, opponentKalahaIndex, hostKalahaIndex);
+			} else {
 				log.info("Inner Else - Invalid move:{}", move);
 				log.info("move < hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
 				log.info("move > hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
 			}
-			
-		}
-		else {
+
+		} else {
 			log.info("Outer Else - Invalid move:{}", move);
 		}
 	}
 
-	private void performMove(int move, String player, int playerKalahaIndex) {
+	private void performMove(int move, String player, int playerKalahaIndex, int opponentKalahaIndex) {
 		int coins = kalahaGameBoard[move];
 		int index = -1;
 		for (int i = 1; i <= coins; i++) {
 			index = (move + i) % kalahaGameBoard.length;
-			kalahaGameBoard[index] += 1;
-			kalahaGameBoard[move] -= 1;
+			if(index!=opponentKalahaIndex) {
+				kalahaGameBoard[index] += 1;
+				kalahaGameBoard[move] -= 1;
+			}
+			else {
+				coins++;
+			}
 		}
 
 		if (index != playerKalahaIndex && index != opponentKalahaIndex && kalahaGameBoard[index] == 1) {
@@ -99,17 +103,39 @@ public class Game {
 	}
 
 	private void checkGameCompletion(int[] kalahaGameBoard, int playerKalahaIndex, String player) {
-		int sum = 0;
-		for (int i = playerKalahaIndex + 1; i <= playerKalahaIndex + sideLength; i++) {
-			sum += kalahaGameBoard[i];
+		int hostRemainingSeedsSum = 0;
+		int opponentRemainingSeedsSum = 0;
+		boolean gameComplete = false;
+
+		for (int i = 1; i < hostKalahaIndex; i++) {
+			hostRemainingSeedsSum += kalahaGameBoard[i];
 		}
-		if (sum == 0) {
+
+		for (int i = hostKalahaIndex + 1; i <= hostKalahaIndex + sideLength; i++) {
+			opponentRemainingSeedsSum += kalahaGameBoard[i];
+		}
+
+		if (hostRemainingSeedsSum == 0) {
+			kalahaGameBoard[opponentKalahaIndex] += opponentRemainingSeedsSum;
+			gameComplete = true;
+			for (int i = hostKalahaIndex + 1; i <= hostKalahaIndex + sideLength; i++) {
+				kalahaGameBoard[i]=0;
+			}
+		} else if (opponentRemainingSeedsSum == 0) {
+			kalahaGameBoard[hostKalahaIndex] += hostRemainingSeedsSum;
+			gameComplete = true;
+			for (int i = 1; i < hostKalahaIndex; i++) {
+				kalahaGameBoard[i]=0;
+			}
+		}
+
+		if (gameComplete) {
 			if (kalahaGameBoard[hostKalahaIndex] > kalahaGameBoard[opponentKalahaIndex])
 				winner = hostPlayer;
 			else if (kalahaGameBoard[hostKalahaIndex] < kalahaGameBoard[opponentKalahaIndex])
 				winner = opponentPlayer;
 			else
-				winner = "Match Drawn";			
+				winner = "Match Drawn";
 			this.status = GameStatus.COMPLETE;
 		}
 
