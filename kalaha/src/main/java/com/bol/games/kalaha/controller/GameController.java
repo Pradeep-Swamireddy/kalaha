@@ -39,13 +39,6 @@ public class GameController {
 		return ResponseEntity.ok(message);
 	}
 	
-	@MessageMapping("/all")
-    @SendTo("/queue/chat/{gameId}")
-    public void post(@Payload Map<String, String> message) {
-		String gameId = message.get("gameId");      
-        simpMessagingTemplate.convertAndSend("/queue/chat/" + gameId, gameService.chat(gameId, message));
-    }
-	
 	@MessageMapping("/play")
     @SendTo("/queue/game/{gameId}")
     public void gamePlay(@Payload Map<String, String> message) throws MessagingException, InvalidGameIdException {

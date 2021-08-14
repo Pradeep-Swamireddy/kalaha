@@ -1,7 +1,6 @@
 package com.bol.games.kalaha.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,12 +40,6 @@ public class GameService {
 			}
 		}
 		throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
-	}
-	
-	public List<String> chat( String gameId, Map<String, String> message) {
-		Game existingGame = gamesMap.get(gameId);
-		existingGame.addMessage(message.get("userId")+"- "+message.get("message"));
-		return existingGame.getMessages();
 	}
 	
 	public Game gamePlay( String gameId, String userId, String move) throws InvalidGameIdException {
