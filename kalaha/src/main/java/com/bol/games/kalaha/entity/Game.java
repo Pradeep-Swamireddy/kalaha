@@ -7,7 +7,9 @@ import com.bol.games.kalaha.model.GameStatus;
 
 import lombok.Data;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 @ToString
 public class Game {
@@ -29,9 +31,9 @@ public class Game {
 		this.gameId = gameId;
 		this.hostPlayer = hostPlayer;
 		this.kalahaGameBoard = kalahaGameBoard;
-		this.hostKalahaIndex = 0;
+		this.opponentKalahaIndex = 0;
 		this.sideLength = (kalahaGameBoard.length - 2) / 2;
-		this.opponentKalahaIndex = sideLength + 1;
+		this.hostKalahaIndex = sideLength + 1;
 		this.status = GameStatus.NEW;
 		initializeBoard();
 		turn = hostPlayer;
@@ -59,12 +61,20 @@ public class Game {
 		if (status != GameStatus.COMPLETE && turn.equalsIgnoreCase(moveBy) && move < kalahaGameBoard.length && move > 0
 				&& kalahaGameBoard[move] > 0) {
 			if (moveBy.equalsIgnoreCase(hostPlayer)
-					&& (move > hostKalahaIndex && move <= hostKalahaIndex + sideLength)) {
+					&& (move < hostKalahaIndex && move >= hostKalahaIndex - sideLength)) {
 				performMove(move, moveBy, hostKalahaIndex);
 			} else if (moveBy.equalsIgnoreCase(opponentPlayer)
-					&& (move > opponentKalahaIndex && move <= opponentKalahaIndex + sideLength)) {
+					&& (move > hostKalahaIndex && move <= hostKalahaIndex + sideLength)) {
 				performMove(move, moveBy, opponentKalahaIndex);
+			}else {
+				log.info("Inner Else - Invalid move:{}", move);
+				log.info("move < hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
+				log.info("move > hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
 			}
+			
+		}
+		else {
+			log.info("Outer Else - Invalid move:{}", move);
 		}
 	}
 
