@@ -1,8 +1,5 @@
 package com.bol.games.kalaha.entity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.bol.games.kalaha.model.GameStatus;
 
 import lombok.Data;
@@ -24,7 +21,6 @@ public class Game {
 	private int hostKalahaIndex;
 	private int opponentKalahaIndex;
 	private int sideLength;
-	private List<String> messages = new ArrayList<>();
 	private String turn;
 
 	public Game(String gameId, String hostPlayer, int[] kalahaGameBoard) {
@@ -51,10 +47,6 @@ public class Game {
 		if (this.opponentPlayer == null && this.status == GameStatus.NEW)
 			return true;
 		return false;
-	}
-
-	public void addMessage(String message) {
-		messages.add(message);
 	}
 
 	public void validateAndMove(int move, String moveBy) {
@@ -91,7 +83,7 @@ public class Game {
 			}
 		}
 
-		if (index != playerKalahaIndex && index != opponentKalahaIndex && kalahaGameBoard[index] == 1) {
+		if (index != playerKalahaIndex && kalahaGameBoard[index] == 1) {
 			int oppositeIndex = findOppositeIndex(kalahaGameBoard, index);
 			kalahaGameBoard[playerKalahaIndex] += kalahaGameBoard[oppositeIndex];
 			kalahaGameBoard[oppositeIndex] = 0;
@@ -116,7 +108,7 @@ public class Game {
 		}
 
 		if (hostRemainingSeedsSum == 0) {
-			kalahaGameBoard[opponentKalahaIndex] += opponentRemainingSeedsSum;
+			kalahaGameBoard[opponentKalahaIndex] += opponentRemainingSeedsSum; 
 			gameComplete = true;
 			for (int i = hostKalahaIndex + 1; i <= hostKalahaIndex + sideLength; i++) {
 				kalahaGameBoard[i]=0;
