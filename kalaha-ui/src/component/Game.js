@@ -7,26 +7,27 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import classes from "./Game.module.css";
-import Badge from 'react-bootstrap/Badge'
+import Alert from "./Alert";
 
 class Game extends React.Component {
   state = {
     move: -1,
     userId: null,
     topics: null,
-    gameId: "",
+    gameId: null,
     game: "",
     turn: null,
     playerType: null,
-    kalahaGameBoardUpper: [4,4,4,4,4,4],
-    kalahaGameBoardLower: [4,4,4,4,4,4],
+    status: null,
+    kalahaGameBoardUpper: [],
+    kalahaGameBoardLower: [],
     opponentsKalaha: 0,
     hostsKalaha: 0,
     opponentId: null,
     gameComplete: false,
     winner: null,
     clientConnected: false,
-    alertMsg: null
+    alertMsg: null,
   };
 
   updateState = (event, id) => {
@@ -36,7 +37,7 @@ class Game extends React.Component {
     this.setState(newState);
   };
 
-  sendMove = move => {
+  sendMove = (move) => {
     console.log(move);
     this.clientRef.sendMessage(
       "/app/play",
@@ -52,11 +53,25 @@ class Game extends React.Component {
     console.log("game:" + data);
     let newState = { ...this.state };
     newState["game"] = JSON.stringify(data);
-    newState["turn"] = data["turn"]===this.state.userId?"Your Turn":"Opponent's Turn"
-    newState["playerType"] = data["hostPlayer"]===this.state.userId?"HOST":"OPPONENT"
-
-    newState["opponentsKalaha"] = data["kalahaGameBoard"].slice(0,1)
-    newState["hostsKalaha"] = data["kalahaGameBoard"].slice(7,8)
+    newState["turn"] =
+      data["turn"] === this.state.userId ? "Your Turn" : "Opponent's Turn";
+    newState["playerType"] =
+      data["hostPlayer"] === this.state.userId ? "HOST" : "OPPONENT";
+    newState["status"] = data["status"];
+    if(data["winner"]!==null){
+      if(data["winner"] === this.state.userId){
+        newState["turn"] = "Congrats! You won the Game"      
+      }
+      else if(data["winner"] === "Match Drawn"){
+        newState["turn"] = "Match Drawn"      
+      }
+      else{
+        newState["turn"] = "You have lost the Game. Better luck next time"      
+      }
+    }
+    newState["winner"] = data["winner"];    
+    newState["opponentsKalaha"] = data["kalahaGameBoard"].slice(0, 1);
+    newState["hostsKalaha"] = data["kalahaGameBoard"].slice(7, 8);
     newState["kalahaGameBoardLower"] = data["kalahaGameBoard"].slice(1, 7);
     newState["kalahaGameBoardUpper"] = data["kalahaGameBoard"]
       .slice(8, 14)
@@ -75,7 +90,7 @@ class Game extends React.Component {
   }
 
   createNewGame = () => {
-    if (this.state.gameId === "" || this.state.gameComplete === true) {
+    if (this.state.gameId === null || this.state.gameComplete === true) {
       axios
         .get("http://localhost:8080/game/new/" + this.state.userId)
         .then((res) => {
@@ -102,53 +117,117 @@ class Game extends React.Component {
       .then((res) => {
         this.setState({ gameId: gameId, topics: "/queue/game/" + gameId });
         console.log(this.state);
+        this.setGameState(res.data);
       });
   };
 
-  getIndex = event => {
-    console.log("inside get index")
+  getIndex = (event) => {
+    console.log("inside get index");
     let newState = { ...this.state };
     let side = null;
-    if(this.state.turn==="Your Turn"){
+    if (this.state.turn === "Your Turn") {
       const move = event.currentTarget.dataset.id;
-      if(this.state.playerType==="HOST"){
-        side="Lower" 
-        if(move>0&&move<7){
+      if (this.state.playerType === "HOST") {
+        side = "Lower";
+        if (move > 0 && move < 7) {
           newState["move"] = move;
           this.sendMove(move);
-        } else{
-          newState["alertMsg"] = "Please click only on "+side+ " side pits"
-        }            
-      }
-      else if(this.state.playerType==="OPPONENT"){
-        side="Upper" 
-        if(move>7&&move<14){
-          newState["move"] = move; 
+        } else {
+          newState["alertMsg"] = "Please click only on " + side + " pits";
+        }
+      } else if (this.state.playerType === "OPPONENT") {
+        side = "Upper";
+        if (move > 7 && move < 14) {
+          newState["move"] = move;
           this.sendMove(move);
-        } else{
-          newState["alertMsg"] = "Please click only on "+side+ " side pits"
-        }        
-      }      
-    }
-    else{
-      newState["alertMsg"] = "Kindly wait for your turn"
+        } else {
+          newState["alertMsg"] = "Please click only on " + side + " pits";
+        }
+      }
+    } else {
+      newState["alertMsg"] = "Kindly wait for your turn";
     }
     this.setState(newState);
-  }
+  };
 
-  render() {    
+  closeAlert = () => this.setState({ alertMsg: null });
+
+  render() {
     let lowerboard = this.state.kalahaGameBoardLower.map((item, index) => {
-      return <div className={classes.pot} data-id={index+1} key={index+1} onClick={(event)=>this.getIndex(event)}><h1>{item}</h1></div>;
+      return (
+        <div
+          className={classes.pot}
+          data-id={index + 1}
+          key={index + 1}
+          onClick={(event) => this.getIndex(event)}
+        >
+          <h1>{item}</h1>
+        </div>
+      );
     });
 
     let upperboard = this.state.kalahaGameBoardUpper.map((item, index) => {
-      return <div className={classes.pot} data-id={13-index} key={13-index} onClick={(event)=>this.getIndex(event)}><h1>{item}</h1></div>;
+      return (
+        <div
+          className={classes.pot}
+          data-id={13 - index}
+          key={13 - index}
+          onClick={(event) => this.getIndex(event)}
+        >
+          <h1>{item}</h1>
+        </div>
+      );
     });
 
-    let turn = this.state.turn!==null?<Badge bg="primary">{this.state.turn}</Badge>:null
-              
+    let board =
+      this.state.status !== null ? (
+        <div className={`${classes.board} mt-5`}>
+          <div className={`${classes.section} ${classes.endsection}`}>
+            <div className={classes.pot} id="mb">
+              <h1>{this.state.opponentsKalaha}</h1>
+            </div>
+          </div>
+          <div className={`${classes.section} ${classes.midsection}`}>
+            <div className={`${classes.midrow} ${classes.topmid}`}>
+              {upperboard}
+            </div>
+            <div className={`${classes.midrow} ${classes.botmid}`}>
+              {lowerboard}
+            </div>
+          </div>
+          <div className={`${classes.section} ${classes.endsection}`}>
+            <div className={classes.pot} id="mt">
+              <h1>{this.state.hostsKalaha}</h1>
+            </div>
+          </div>
+        </div>
+      ) : null;
+
+    let options =
+      this.state.status === null ? (
+        <Container>
+          <Row className="justify-content-md-center pb-3 pt-3">
+            <Col md={3}>
+              <Button variant="success" onClick={this.createNewGame.bind(this)}>
+                Start New Game
+              </Button>
+            </Col>
+          </Row>
+          <Row className="justify-content-md-center pb-3">
+            <Col md lg="2">
+              <Form.Control
+                type="text"
+                placeholder="Enter existing Game Id"
+                value={this.state.gameId}
+                onChange={(event) => this.connectToGame(event)}
+              />
+            </Col>
+          </Row>
+        </Container>
+      ) : null;
+
     return (
-      <Container className={classes.flexcontainer} >
+      <Container className={classes.flexcontainer}>
         <SockJsClient
           url="http://localhost:8080/gameplay"
           topics={[this.state.topics]}
@@ -166,53 +245,19 @@ class Game extends React.Component {
             this.setState({ clientConnected: false });
           }}
         />
+        {this.state.alertMsg !== null ? (
+          <Alert msg={this.state.alertMsg} onclick={this.closeAlert} />
+        ) : null}
+        {(this.state.status === "NEW"||this.state.status === null) && this.state.gameId !== null ? (
+          <h5>Game Id(Share this with your opponent): {this.state.gameId}</h5>
+        ) : null}
 
-        <h5>Game Id(Share this with your opponent): {this.state.gameId}</h5>
-        <h5>Your UserID: {this.state.userId}</h5>
-        <p>Game Board: {this.state.game}</p>        
         <Row>
-        <Col md={2} />
-        <Col>
-        <div className={classes.board}>
-              <div className={`${classes.section} ${classes.endsection}`}>
-                <div className={classes.pot} id="mb"><h1>{this.state.opponentsKalaha}</h1></div> 
-              </div>
-              <div className={`${classes.section} ${classes.midsection}`}>
-                <div className={`${classes.midrow} ${classes.topmid}`}>
-                  {upperboard}
-                </div>
-                <div className={`${classes.midrow} ${classes.botmid}`}>
-                  {lowerboard}
-                </div>
-              </div>
-              <div className={`${classes.section} ${classes.endsection}`}>
-                  <div className={classes.pot} id="mt"><h1>{this.state.hostsKalaha}</h1></div>        
-              </div>
-        </div>
-        </Col>        
-        </Row>        
-        <h3 className={classes.blink}>{ this.state.turn} </h3>   
-        {turn}    
-
-        <Container fluid="md">          
-          <Row className="justify-content-md-center pb-3 pt-3">
-            <Col xs lg="2">
-              <Button variant="success" onClick={this.createNewGame.bind(this)}>
-                Start New Game
-              </Button>
-            </Col>
-          </Row>
-          <Row className="justify-content-md-center pb-3">
-            <Col xs lg="2">
-              <Form.Control
-                type="text"
-                placeholder="Enter existing Game Id"
-                value={this.state.gameId}
-                onChange={(event) => this.connectToGame(event)}
-              />
-            </Col>
-          </Row>
-        </Container>
+          <Col md={2} />
+          <Col>{board}</Col>
+        </Row>
+        <h3 className={classes.blink}>{this.state.turn} </h3>
+        {options}
       </Container>
     );
   }

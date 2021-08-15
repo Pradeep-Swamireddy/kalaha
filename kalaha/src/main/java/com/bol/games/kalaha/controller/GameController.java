@@ -61,10 +61,10 @@ public class GameController {
 	}
 	
 	@GetMapping("/join/existing/{opponentUserId}/{gameId}")
-	public ResponseEntity<String> joinGame(@PathVariable String opponentUserId, @PathVariable String gameId) throws InvalidGameIdException {
+	public ResponseEntity<Game> joinGame(@PathVariable String opponentUserId, @PathVariable String gameId) throws InvalidGameIdException {
 		Game joinedGame = gameService.joinExistingGame(opponentUserId, gameId);
 		simpMessagingTemplate.convertAndSend("/queue/game/" + gameId, joinedGame);
-		return ResponseEntity.ok(joinedGame.getGameId());
+		return ResponseEntity.ok(joinedGame);
 	}
 
 }
