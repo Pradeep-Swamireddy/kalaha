@@ -6,24 +6,27 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import classes from "./Game.module.css";
+import Badge from 'react-bootstrap/Badge'
 
 class Game extends React.Component {
   state = {
-    currentMessage: "",
     move: -1,
-    msg: [],
     userId: null,
     topics: null,
     gameId: "",
     game: "",
-    kalahaGameBoardUpper: [],
-    kalahaGameBoardLower: [],
+    turn: null,
+    playerType: null,
+    kalahaGameBoardUpper: [4,4,4,4,4,4],
+    kalahaGameBoardLower: [4,4,4,4,4,4],
     opponentsKalaha: 0,
-    hostsKalaha: 1,
+    hostsKalaha: 0,
     opponentId: null,
     gameComplete: false,
     winner: null,
     clientConnected: false,
+    alertMsg: null
   };
 
   updateState = (event, id) => {
@@ -33,13 +36,13 @@ class Game extends React.Component {
     this.setState(newState);
   };
 
-  sendMove = () => {
-    console.log(this.state.move);
+  sendMove = move => {
+    console.log(move);
     this.clientRef.sendMessage(
       "/app/play",
       JSON.stringify({
         userId: this.state.userId,
-        move: this.state.move,
+        move: move,
         gameId: this.state.gameId,
       })
     );
@@ -49,6 +52,9 @@ class Game extends React.Component {
     console.log("game:" + data);
     let newState = { ...this.state };
     newState["game"] = JSON.stringify(data);
+    newState["turn"] = data["turn"]===this.state.userId?"Your Turn":"Opponent's Turn"
+    newState["playerType"] = data["hostPlayer"]===this.state.userId?"HOST":"OPPONENT"
+
     newState["opponentsKalaha"] = data["kalahaGameBoard"].slice(0,1)
     newState["hostsKalaha"] = data["kalahaGameBoard"].slice(7,8)
     newState["kalahaGameBoardLower"] = data["kalahaGameBoard"].slice(1, 7);
@@ -99,44 +105,50 @@ class Game extends React.Component {
       });
   };
 
-  render() {
-    const circle = {
-      display: "flex",
-      width: "100px",
-      height: "100px",
-      "background-color": "#966F33",
-      "border-radius": "50%"
-    };
-
-    const wrapper = {
-      display: "flex",
-      "flex-direction": "column",
-      "flex-wrap": "wrap",
-      "height": "120px",
-      "width": "516px"    
+  getIndex = event => {
+    console.log("inside get index")
+    let newState = { ...this.state };
+    let side = null;
+    if(this.state.turn==="Your Turn"){
+      const move = event.currentTarget.dataset.id;
+      if(this.state.playerType==="HOST"){
+        side="Lower" 
+        if(move>0&&move<7){
+          newState["move"] = move;
+          this.sendMove(move);
+        } else{
+          newState["alertMsg"] = "Please click only on "+side+ " side pits"
+        }            
+      }
+      else if(this.state.playerType==="OPPONENT"){
+        side="Upper" 
+        if(move>7&&move<14){
+          newState["move"] = move; 
+          this.sendMove(move);
+        } else{
+          newState["alertMsg"] = "Please click only on "+side+ " side pits"
+        }        
+      }      
     }
+    else{
+      newState["alertMsg"] = "Kindly wait for your turn"
+    }
+    this.setState(newState);
+  }
 
-    const mancalacircle = {
-      display: "flex",
-      width: "100px",
-      height: "100px",
-      "background-color": "green",
-      "border-radius": "100%",
-      "flex-basis": "110px",
-    };
-    const text = {
-      margin: "auto"
-    };
-
-    let lowerboard = this.state.kalahaGameBoardLower.map((item) => {
-      return <Col style={circle} md={1}> <p style={text}>{item}</p></Col>;
+  render() {    
+    let lowerboard = this.state.kalahaGameBoardLower.map((item, index) => {
+      return <div className={classes.pot} data-id={index+1} key={index+1} onClick={(event)=>this.getIndex(event)}><h1>{item}</h1></div>;
     });
 
-    let upperboard = this.state.kalahaGameBoardUpper.map((item) => {
-      return <Col style={circle} md={1}> <p style={text}>{item}</p></Col>;
+    let upperboard = this.state.kalahaGameBoardUpper.map((item, index) => {
+      return <div className={classes.pot} data-id={13-index} key={13-index} onClick={(event)=>this.getIndex(event)}><h1>{item}</h1></div>;
     });
+
+    let turn = this.state.turn!==null?<Badge bg="primary">{this.state.turn}</Badge>:null
+              
     return (
-      <div className="d-flex p-2 flex-md-column justify-content-center">
+      <Container className={classes.flexcontainer} >
         <SockJsClient
           url="http://localhost:8080/gameplay"
           topics={[this.state.topics]}
@@ -157,36 +169,32 @@ class Game extends React.Component {
 
         <h5>Game Id(Share this with your opponent): {this.state.gameId}</h5>
         <h5>Your UserID: {this.state.userId}</h5>
-        <p>Game Board: {this.state.game}</p>
-        <Container fluid="md">
-          <Row>            
-          <Col md={3}></Col>
-           {upperboard}
-          </Row>
-          <Row>
-            <Col style={mancalacircle} md={3}> <p style={text}>{this.state.opponentsKalaha}</p></Col>
-            <Col md={9}></Col>
-            <Col style={mancalacircle} md={1}> <p style={text}>{this.state.hostsKalaha}</p></Col>
-          </Row>
-          <Row>        
-          <Col md={3}></Col>    
-           {lowerboard}
-          </Row>
-        </Container>
-        <textarea
-          id="move"
-          value={this.state.move}
-          onChange={(event) => this.updateState(event, "move")}
-        />
+        <p>Game Board: {this.state.game}</p>        
+        <Row>
+        <Col md={2} />
+        <Col>
+        <div className={classes.board}>
+              <div className={`${classes.section} ${classes.endsection}`}>
+                <div className={classes.pot} id="mb"><h1>{this.state.opponentsKalaha}</h1></div> 
+              </div>
+              <div className={`${classes.section} ${classes.midsection}`}>
+                <div className={`${classes.midrow} ${classes.topmid}`}>
+                  {upperboard}
+                </div>
+                <div className={`${classes.midrow} ${classes.botmid}`}>
+                  {lowerboard}
+                </div>
+              </div>
+              <div className={`${classes.section} ${classes.endsection}`}>
+                  <div className={classes.pot} id="mt"><h1>{this.state.hostsKalaha}</h1></div>        
+              </div>
+        </div>
+        </Col>        
+        </Row>        
+        <h3 className={classes.blink}>{ this.state.turn} </h3>   
+        {turn}    
 
-        <Container fluid="md">
-          <Row className="justify-content-md-center pb-3 pt-3">
-            <Col xs lg="2">
-              <Button variant="primary" onClick={this.sendMove}>
-                Send Move
-              </Button>
-            </Col>
-          </Row>
+        <Container fluid="md">          
           <Row className="justify-content-md-center pb-3 pt-3">
             <Col xs lg="2">
               <Button variant="success" onClick={this.createNewGame.bind(this)}>
@@ -205,7 +213,7 @@ class Game extends React.Component {
             </Col>
           </Row>
         </Container>
-      </div>
+      </Container>
     );
   }
 }

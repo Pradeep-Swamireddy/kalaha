@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bol.games.kalaha.entity.Game;
 import com.bol.games.kalaha.exception.InvalidGameIdException;
 import com.bol.games.kalaha.service.GameService;
 
@@ -60,8 +61,10 @@ public class GameController {
 	}
 	
 	@GetMapping("/join/existing/{opponentUserId}/{gameId}")
-	public String joinGame(@PathVariable String opponentUserId, @PathVariable String gameId) throws InvalidGameIdException {
-		return gameService.joinExistingGame(opponentUserId, gameId);
+	public ResponseEntity<String> joinGame(@PathVariable String opponentUserId, @PathVariable String gameId) throws InvalidGameIdException {
+		Game joinedGame = gameService.joinExistingGame(opponentUserId, gameId);
+		simpMessagingTemplate.convertAndSend("/queue/game/" + gameId, joinedGame);
+		return ResponseEntity.ok(joinedGame.getGameId());
 	}
 
 }

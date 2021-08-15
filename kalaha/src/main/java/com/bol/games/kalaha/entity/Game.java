@@ -87,6 +87,7 @@ public class Game {
 			int oppositeIndex = findOppositeIndex(kalahaGameBoard, index);
 			kalahaGameBoard[playerKalahaIndex] += kalahaGameBoard[oppositeIndex];
 			kalahaGameBoard[oppositeIndex] = 0;
+			this.turn = toggleTurn(player);
 		} else if (index != playerKalahaIndex) {
 			this.turn = toggleTurn(player);
 		}

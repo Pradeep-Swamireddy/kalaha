@@ -26,14 +26,14 @@ public class GameService {
 		return newGame.getGameId();
 	}
 
-	public String joinExistingGame(String opponentUserId, String gameId) throws InvalidGameIdException {
+	public Game joinExistingGame(String opponentUserId, String gameId) throws InvalidGameIdException {
 		if(gamesMap.containsKey(gameId)) {
 			Game existingGame = gamesMap.get(gameId);
 			if(existingGame.waitingForOpponent()) {
 				existingGame.setOpponentPlayer(opponentUserId);
 				existingGame.setStatus(GameStatus.IN_PROGRESS);
 				log.info(existingGame.toString());
-				return gameId;
+				return existingGame;
 			}
 			else {
 				throw new InvalidGameIdException(String.format("Game with id %s already in progress. Please enter different game id", gameId));
