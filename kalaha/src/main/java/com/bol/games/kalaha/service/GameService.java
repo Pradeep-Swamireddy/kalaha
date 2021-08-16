@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.bol.games.kalaha.entity.Game;
 import com.bol.games.kalaha.exception.InvalidGameIdException;
+import com.bol.games.kalaha.exception.InvalidMoveException;
 import com.bol.games.kalaha.model.GameStatus;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class GameService {
 		throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
 	}
 	
-	public Game gamePlay( String gameId, String userId, String move) throws InvalidGameIdException {
+	public Game gamePlay( String gameId, String userId, String move) throws InvalidGameIdException, NumberFormatException, InvalidMoveException {
 		Game existingGame = gamesMap.get(gameId);	
 		if(existingGame==null) {
 			throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));

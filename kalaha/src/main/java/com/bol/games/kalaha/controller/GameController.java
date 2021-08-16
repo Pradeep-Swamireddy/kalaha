@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bol.games.kalaha.entity.Game;
 import com.bol.games.kalaha.exception.InvalidGameIdException;
+import com.bol.games.kalaha.exception.InvalidMoveException;
 import com.bol.games.kalaha.service.GameService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class GameController {
 	
 	@MessageMapping("/play")
     @SendTo("/queue/game/{gameId}")
-    public void gamePlay(@Payload Map<String, String> message) throws MessagingException, InvalidGameIdException {
+    public void gamePlay(@Payload Map<String, String> message) throws MessagingException, InvalidGameIdException, NumberFormatException, InvalidMoveException {
 		String gameId = message.get("gameId"); 
 		String userId = message.get("userId"); 
 		String move = message.get("move"); 		

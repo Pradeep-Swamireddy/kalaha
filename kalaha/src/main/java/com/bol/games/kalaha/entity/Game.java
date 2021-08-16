@@ -1,12 +1,11 @@
 package com.bol.games.kalaha.entity;
 
+import com.bol.games.kalaha.exception.InvalidMoveException;
 import com.bol.games.kalaha.model.GameStatus;
 
 import lombok.Data;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Data
 @ToString
 public class Game {
@@ -49,7 +48,7 @@ public class Game {
 		return false;
 	}
 
-	public void validateAndMove(int move, String moveBy) {
+	public void validateAndMove(int move, String moveBy) throws InvalidMoveException {
 		if (status != GameStatus.COMPLETE && turn.equals(moveBy) && move < kalahaGameBoard.length && move > 0
 				&& kalahaGameBoard[move] > 0) {
 			if (moveBy.equals(hostPlayer)
@@ -59,13 +58,15 @@ public class Game {
 					&& (move > hostKalahaIndex && move <= hostKalahaIndex + sideLength)) {
 				performMove(move, moveBy, opponentKalahaIndex, hostKalahaIndex);
 			} else {
-				log.info("Inner Else - Invalid move:{}", move);
-				log.info("move < hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
-				log.info("move > hostKalahaIndex, move: {}, hostKalahaIndex:{}", move, hostKalahaIndex);
+				throw new InvalidMoveException(String.format("Invalid move %s by %s",move, moveBy));
 			}
 
-		} else {
-			log.info("Outer Else - Invalid move:{}", move);
+		} 
+		else if(status==GameStatus.COMPLETE) {
+			throw new InvalidMoveException("Error: Game is complete");
+		}
+		else {
+			throw new InvalidMoveException(String.format("Invalid move %s by %s",move, moveBy));
 		}
 	}
 
@@ -86,7 +87,9 @@ public class Game {
 		if (index != playerKalahaIndex && kalahaGameBoard[index] == 1) {
 			int oppositeIndex = findOppositeIndex(kalahaGameBoard, index);
 			kalahaGameBoard[playerKalahaIndex] += kalahaGameBoard[oppositeIndex];
+			kalahaGameBoard[playerKalahaIndex] += kalahaGameBoard[index];
 			kalahaGameBoard[oppositeIndex] = 0;
+			kalahaGameBoard[index] = 0;
 			this.turn = toggleTurn(player);
 		} else if (index != playerKalahaIndex) {
 			this.turn = toggleTurn(player);
