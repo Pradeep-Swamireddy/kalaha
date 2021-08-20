@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.bol.games.kalaha.entity.Game;
@@ -16,39 +17,50 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class GameService {
+	@Value("${kalaha.board.size}")
+	private int kalahaBoardSize;
+	
+	@Value("${kalaha.seeds.per.cup}")
+	private int kalahaSeedsPerCup;
+	
+	@Value("${kalaha.players.per.game}")
+	private int kalahaPlayersPerGame;
 	
 	private Map<String, Game> gamesMap = new HashMap<>();
-	
+
 	public String createNewGame(String userId) {
 		UUID gameId = UUID.randomUUID();
-		Game newGame = new Game(gameId.toString(), userId, new int[14]);
+		Game newGame = new Game(gameId.toString(), userId, kalahaBoardSize, kalahaSeedsPerCup, kalahaPlayersPerGame);
 		log.info(newGame.toString());
 		gamesMap.put(newGame.getGameId(), newGame);
 		return newGame.getGameId();
 	}
 
 	public Game joinExistingGame(String opponentUserId, String gameId) throws InvalidGameIdException {
-		if(gamesMap.containsKey(gameId)) {
+		if (gamesMap.containsKey(gameId)) {
 			Game existingGame = gamesMap.get(gameId);
-			if(existingGame.waitingForOpponent()) {
+			if (existingGame.waitingForOpponent()) {
 				existingGame.setOpponentPlayer(opponentUserId);
 				existingGame.setStatus(GameStatus.IN_PROGRESS);
 				log.info(existingGame.toString());
 				return existingGame;
-			}
-			else {
-				throw new InvalidGameIdException(String.format("Game with id %s already in progress. Please enter different game id", gameId));
+			} else {
+				throw new InvalidGameIdException(
+						String.format("Game with id %s already in progress. Please enter different game id", gameId));
 			}
 		}
-		throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
+		throw new InvalidGameIdException(
+				String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
 	}
-	
-	public Game gamePlay( String gameId, String userId, String move) throws InvalidGameIdException, NumberFormatException, InvalidMoveException {
-		Game existingGame = gamesMap.get(gameId);	
-		if(existingGame==null) {
-			throw new InvalidGameIdException(String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
+
+	public Game gamePlay(String gameId, String userId, String move)
+			throws InvalidGameIdException, NumberFormatException, InvalidMoveException {
+		Game existingGame = gamesMap.get(gameId);
+		if (existingGame == null) {
+			throw new InvalidGameIdException(
+					String.format("Game with id %s doesnt exist. Please enter different game id", gameId));
 		}
-		existingGame.validateAndMove(Integer.parseInt(move), userId);		
+		existingGame.validateAndMove(Integer.parseInt(move), userId);
 		return existingGame;
 	}
 
